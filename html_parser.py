@@ -9,9 +9,11 @@ from pymongo import MongoClient
 import QueueManager
 import isVisited
 import database
+from tqdm import tqdm
 
 stoplist = ["javascript:void(0)"]
-website_list = ["sohu.com"]
+website_list = ["news.sohu.com"]
+MAX_ITERATION = 1000
 
 """
 class Webpage(object):
@@ -56,12 +58,11 @@ def filtered_addtolist(link, link_queue, link_visited):
             for website in website_list:
                 if website in link:
                     link_queue.put(link)
-                    print (link)
+                    # print (link)
                     return
 
-def parse_an_article(iter=0,\
-                     link_queue=QueueManager.list_init(),\
-                     link_visited=isVisited.init(),\
+def parse_an_article(link_queue=QueueManager.list_init(),
+                     link_visited=isVisited.init(),
                      content_list=[]):
 
     target_url = link_queue.get()
@@ -72,16 +73,20 @@ def parse_an_article(iter=0,\
     soup = BeautifulSoup(html, 'html.parser')
 
     # get date
-    date = 123
+    date = None
+    for tag in soup.find_all('time'):
+        if tag.has_attr('content'):
+            date = tag['content']
+            print(date)
 
     byte_title = soup.title.string.encode('utf8')
     articles = soup.find_all('article')
+    byte_content = ""
     try:
         article = articles[0]
-        byte_content = ""
         for string in article.strings:
             byte_content += string
-        byte_content = content.encode('utf8')
+        byte_content = byte_content.encode('utf8')
     except:
         pass
 
@@ -89,24 +94,24 @@ def parse_an_article(iter=0,\
         filtered_addtolist(raw_link.get('href'), link_queue, link_visited)
 
     page = Webpage(target_url, byte_title, date, byte_content)
-    iter += 1
-    if iter >= 1000:
-        iter = 0
+    return link_queue, link_visited, content_list
+
+if __name__ == '__main__':
+    link_queue = QueueManager.list_init()
+    link_visited = isVisited.init()
+    content_list = []
+    while True:
+        for iter_count in tqdm(range(MAX_ITERATION)):
+            link_queue, link_visited, content_list\
+                = parse_an_article(link_queue, link_visited, content_list)
         print("now start saving")
         QueueManager.list_save(link_queue)
         isVisited.save(link_visited)
         database.save(content_list)
+        print("saving complete")
         while True:
-            user_input = raw_input("continue? y/n")
+            user_input = input("continue?\n(y/n)")
             if user_input == 'y':
                 break
             if user_input == 'n':
                 exit(0)
-    return parse_an_article(iter,
-                     link_queue, link_visited, content_list)
-    # page_repo.append(page)
-
-if __name__ == '__main__':
-    parse_an_article()
-
-# sys.stdout.buffer.write(byte_content)
