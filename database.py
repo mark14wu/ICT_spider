@@ -1,20 +1,26 @@
-import json
+import shelve
 import os
 
-database_filename = 'data.json'
+database_filename = 'database'
+dataKey = 'webpages_database'
 
-def init():
-    client = MongoClient()
-    page_db = client['webpages_db']
-    pages = page_db['webpages']
-    return client, page_db, pages
-
-def save(content_list):
-    if os.path.isfile(database_filename):
-        old_list = json.load(open(database_filename))
-    else:
-        old_list = []
-    print("now start saving data")
-    old_list.extend(content_list)
-    json.dump(old_list, open(database_filename, 'w'))
-    print("saving data finished")
+def save(name, content):
+    # if os.path.isfile(database_filename):
+    #     old_list = shelve.open(database_filename)[dataKey]
+    # else:
+    #     old_list = []
+    # print("now start saving data")
+    # old_list.extend(content_list)
+    # # json.dump(old_list, open(database_filename, 'w'))
+    # shelve.open(database_filename)[dataKey] = old_list
+    # print("saving data finished")
+    dir_name = 'contents/'
+    if not os.path.isdir(dir_name):
+        os.mkdir(dir_name)
+    if name is None:
+        return
+    if content == "":
+        return
+    file = shelve.open(dir_name + name, flag='c')
+    file[dataKey] = content
+    file.close()
