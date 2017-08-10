@@ -7,7 +7,7 @@ jsonfile_name = 'linklist.json'
 def list_init():
     link_queue = Queue()
     if os.path.isfile(jsonfile_name):
-        link_list = json.load(open(jsonfile_name).read())
+        link_list = json.load(open(jsonfile_name))
         for link in link_list:
             link_queue.put(link)
     else:
